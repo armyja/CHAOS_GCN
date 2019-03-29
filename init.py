@@ -100,7 +100,7 @@ def training_list(args):
     total_samples = len(image_directory)
 
     # volume_id slice_id patient_id image_path label_path
-    list_path = os.path.join(args.root_dir, 'lists')
+    list_path = list_path_from_root(args.root_dir)
     try:
         shutil.rmtree(list_path)
     except OSError as e:
@@ -129,7 +129,7 @@ def training_list(args):
             for o in range(1, args.organ_number + 1):
                 m_sum[j, o] = (is_organ(m_label, o)).sum()
 
-        output = open(list_training(list_path), 'a+')
+        output = open(list_training_all(list_path), 'a+')
 
         for j in range(0, slice_number):
             output.write(str(i) + ' ' + str(j))

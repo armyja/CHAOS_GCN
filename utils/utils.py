@@ -39,7 +39,10 @@ def testing_set_filename(list_path, current_fold):
     return os.path.join(list_path, 'testing_' + 'FD' + str(current_fold) + '.txt')
 
 
-def list_training(list_path):
+def list_path_from_root(root):
+    return os.path.join(root, 'lists')
+
+def list_training_all(list_path):
     return os.path.join(list_path, 'training.txt')
 
 
@@ -75,7 +78,7 @@ def class_mapping(input_value):
 def png2npy(png):
     gt_arr = np.asarray(PIL.Image.open(png))
     unique_values_mask = np.unique(gt_arr)
-    gt_mask = np.zeros_like(gt_arr).astype(np.uint8)
+    gt_mask = np.zeros_like(gt_arr).astype(np.int64)
     for unique_value in unique_values_mask:
         gt_mask[gt_arr == unique_value] = class_mapping(unique_value)
     return gt_mask

@@ -1,9 +1,10 @@
 import torch.nn as nn
 import torch.nn as nn
 import torch.nn.functional as F
-from BR import BR
-from GCN import GCN
 from torchvision import models
+
+from model.BR import BR
+from model.GCN import GCN
 
 
 class FCN_GCN(nn.Module):

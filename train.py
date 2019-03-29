@@ -1,133 +1,217 @@
 import os
 import random
+import time
+
 import torch
 
 import numpy as np
 import argparse
 from distutils.version import LooseVersion
 
+import visdom
 from torch import nn
 
-from build_model import FCN_GCN
+from loss import loss
+from utils.utils import *
+import data_loader
+import build_model
 
-def main(args):
-    crit = nn.NLLLoss(ignore_index=-1)
 
-    FCN_GCN_model = FCN_GCN(num_classes=5)
-
-    model_parameters = filter(lambda p: p.requires_grad, FCN_GCN_model.parameters())
-    params = sum([np.prod(p.size()) for p in model_parameters])
-    print('model parameters:', params)
-
-if __name__ == '__main__':
-    assert LooseVersion(torch.__version__) >= LooseVersion('0.4.0'), \
-        'PyTorch>=0.4.0 is required'
-
+def parse_args():
     parser = argparse.ArgumentParser()
     # Model related arguments
-    parser.add_argument('--id', default='baseline',
+    parser.add_argument('--current_fold',
+                        default=0,
+                        type=int,
                         help="a name for identifying the model")
-    parser.add_argument('--arch_encoder', default='resnet50dilated',
-                        help="architecture of net_encoder")
-    parser.add_argument('--arch_decoder', default='ppm_deepsup',
-                        help="architecture of net_decoder")
-    parser.add_argument('--weights_encoder', default='',
-                        help="weights to finetune net_encoder")
-    parser.add_argument('--weights_decoder', default='',
-                        help="weights to finetune net_decoder")
-    parser.add_argument('--fc_dim', default=2048, type=int,
-                        help='number of features between encoder and decoder')
+    parser.add_argument(
+        '--root_dir',
+        default='/media/jeffrey/D/CHAOS',
+        help='', )
+    parser.add_argument(
+        '--organ_number',
+        default=4,
+        type=int,
+        help='')
+    parser.add_argument(
+        '--organ_id',
+        default=1,
+        type=int,
+        help='')
+    parser.add_argument(
+        '--loss_type',
+        default='cross_entropy2d',
+        help='', )
+    parser.add_argument(
+        '--learning_rate',
+        type=float,
+        default=1e-4,
+        help='', )
 
-    # Path related arguments
-    parser.add_argument('--list_train',
-                        default='./data/train.odgt')
-    parser.add_argument('--list_val',
-                        default='./data/validation.odgt')
-    parser.add_argument('--root_dataset',
-                        default='./data/')
+    return parser.parse_args()
 
-    # optimization related arguments
-    parser.add_argument('--gpus', default='0-3',
-                        help='gpus to use, e.g. 0-3 or 0,1,2,3')
-    parser.add_argument('--batch_size_per_gpu', default=2, type=int,
-                        help='input batch size')
-    parser.add_argument('--num_epoch', default=20, type=int,
-                        help='epochs to train for')
-    parser.add_argument('--start_epoch', default=1, type=int,
-                        help='epoch to start training. useful if continue from a checkpoint')
-    parser.add_argument('--epoch_iters', default=5000, type=int,
-                        help='iterations of each epoch (irrelevant to batch size)')
-    parser.add_argument('--optim', default='SGD', help='optimizer')
-    parser.add_argument('--lr_encoder', default=2e-2, type=float, help='LR')
-    parser.add_argument('--lr_decoder', default=2e-2, type=float, help='LR')
-    parser.add_argument('--lr_pow', default=0.9, type=float,
-                        help='power in poly to drop LR')
-    parser.add_argument('--beta1', default=0.9, type=float,
-                        help='momentum for sgd, beta1 for adam')
-    parser.add_argument('--weight_decay', default=1e-4, type=float,
-                        help='weights regularizer')
-    parser.add_argument('--deep_sup_scale', default=0.4, type=float,
-                        help='the weight of deep supervision loss')
-    parser.add_argument('--fix_bn', action='store_true',
-                        help='fix bn params')
 
-    # Data related arguments
-    parser.add_argument('--num_class', default=150, type=int,
-                        help='number of classes')
-    parser.add_argument('--workers', default=16, type=int,
-                        help='number of data loading workers')
-    parser.add_argument('--imgSize', default=[300, 375, 450, 525, 600],
-                        nargs='+', type=int,
-                        help='input image size of short edge (int or list)')
-    parser.add_argument('--imgMaxSize', default=1000, type=int,
-                        help='maximum input image size of long edge')
-    parser.add_argument('--padding_constant', default=8, type=int,
-                        help='maxmimum downsampling rate of the network')
-    parser.add_argument('--segm_downsampling_rate', default=8, type=int,
-                        help='downsampling rate of the segmentation label')
-    parser.add_argument('--random_flip', default=True, type=bool,
-                        help='if horizontally flip images when training')
+def main():
+    vis = visdom.Visdom()
+    vis.delete_env(env=f'main_GCN')
+    viz = visdom.Visdom(env=f'main_GCN')
+    args = parse_args()
 
-    # Misc arguments
-    parser.add_argument('--seed', default=304, type=int, help='manual seed')
-    parser.add_argument('--ckpt', default='./ckpt',
-                        help='folder to output checkpoints')
-    parser.add_argument('--disp_iter', type=int, default=20,
-                        help='frequency to display')
-
-    args = parser.parse_args()
     print("Input arguments:")
     for key, val in vars(args).items():
         print("{:16} {}".format(key, val))
 
-    # Parse gpu ids
-    args.batch_size =0
+    # Todo Step 1: Load Dataset
+    '''
+    STEP 1: LOADING DATASET
+    '''
 
-    args.max_iters = args.epoch_iters * args.num_epoch
-    args.running_lr_encoder = args.lr_encoder
-    args.running_lr_decoder = args.lr_decoder
+    train_dataset = data_loader.OrganSeg(current_fold=args.current_fold,
+                                         list_path=list_path_from_root(args.root_dir),
+                                         n_class=args.organ_number + 1,
+                                         organ_id=args.organ_id,
+                                         # slice_threshold=1 means training all images and neglect labels
+                                         slice_threshold=1,
+                                         transforms=None)
 
-    args.arch_encoder = args.arch_encoder.lower()
-    args.arch_decoder = args.arch_decoder.lower()
+    test_dataset = data_loader.OrganTest(current_fold=args.current_fold,
+                                         list_path=list_path_from_root(args.root_dir),
+                                         transforms=None)
+    # Todo Step 2: Make Dataset Iterable
+    '''
+    STEP 2: MAKING DATASET ITERABLE
+    '''
 
-    # Model ID
-    args.id += '-' + args.arch_encoder
-    args.id += '-' + args.arch_decoder
-    args.id += '-batchSize' + str(args.batch_size)
-    args.id += '-imgMaxSize' + str(args.imgMaxSize)
-    args.id += '-paddingConst' + str(args.padding_constant)
-    args.id += '-segmDownsampleRate' + str(args.segm_downsampling_rate)
-    args.id += '-LR_encoder' + str(args.lr_encoder)
-    args.id += '-LR_decoder' + str(args.lr_decoder)
-    args.id += '-epoch' + str(args.num_epoch)
-    if args.fix_bn:
-        args.id += '-fixBN'
-    print('Model ID: {}'.format(args.id))
+    batch_size = 1
+    n_iters = 10000
+    num_epochs = n_iters / (len(train_dataset) / batch_size)
+    num_epochs = int(num_epochs)
 
-    args.ckpt = os.path.join(args.ckpt, args.id)
-    if not os.path.isdir(args.ckpt):
-        os.makedirs(args.ckpt)
+    train_loader = torch.utils.data.DataLoader(dataset=train_dataset,
+                                               batch_size=batch_size,
+                                               shuffle=True)
 
-    random.seed(args.seed)
-    torch.manual_seed(args.seed)
-    main(args)
+    test_loader = torch.utils.data.DataLoader(dataset=test_dataset,
+                                              batch_size=batch_size,
+                                              shuffle=False)
+
+    # Todo Step 3: Create Model Class
+    # Todo Step 4: Instantiate Model Class
+    '''
+    STEP 4: INSTANTIATE MODEL CLASS
+    '''
+    # input_dim = 256 * 256 or 288 * 288
+    # output_dim = N x C x H x W
+    # C = num_classes
+
+    model = build_model.FCN_GCN(num_classes=args.organ_number + 1)
+
+    #######################
+    #  USE GPU FOR MODEL  #
+    #######################
+
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    model.to(device)
+
+    # Todo Step 5: Instantiate Loss Class
+
+    '''
+    STEP 5: INSTANTIATE LOSS CLASS
+    '''
+    loss_dict = {
+        'cross_entropy2d': loss.cross_entropy2d,
+        'bootstrapped_cross_entropy2d': loss.bootstrapped_cross_entropy2d,
+        'multi_scale_cross_entropy2d': loss.multi_scale_cross_entropy2d,
+    }
+    criterion = loss_dict[args.loss_type]
+
+    # Todo Step 6: Instantiate Optimizer Class
+
+    optimizer = torch.optim.SGD(model.parameters(), lr=args.learning_rate,
+                                momentum=0.99,
+                                )
+
+    # Todo Step 7: Train Model
+
+    model_parameters = filter(lambda p: p.requires_grad, model.parameters())
+    params = sum([np.prod(p.size()) for p in model_parameters])
+    print('model parameters:', params)
+
+    iter = 0
+
+    for epoch in range(num_epochs):
+        t = time.time()
+        total_loss = 0.0
+        for i, (images, labels) in enumerate(train_loader):
+            m_t = time.time()
+            #######################
+            #  USE GPU FOR MODEL  #
+            #######################
+            images = images.requires_grad_().to(device)
+            labels = labels.to(device)
+
+            # Clear gradients w.r.t. parameters
+            optimizer.zero_grad()
+
+            # Forward pass to get output/logits
+            outputs = model(images)
+
+            # Calculate Loss: softmax --> cross entropy loss
+            m_loss = criterion(outputs, labels)
+            total_loss += m_loss.item()
+
+            # Getting gradients w.r.t. parameters
+            m_loss.backward()
+
+            # Updating parameters
+            optimizer.step()
+
+            iter += 1
+            print('Iteration: {}. Loss: {}, {} seconds elapsed'.format(iter, m_loss.item(), str(time.time() - m_t)))
+            del images, labels, outputs, m_loss
+
+            if iter % 500 == 0:
+                # Calculate Accuracy
+                correct = 0
+                total = 0
+                # Iterate through test dataset
+                _iter = 0
+                for images, labels in test_loader:
+                    _iter += 1
+                    #######################
+                    #  USE GPU FOR MODEL  #
+                    #######################
+                    images = images.requires_grad_().to(device)
+                    labels = labels.to(device)
+                    # Forward pass only to get logits/output
+                    outputs = model(images)
+                    # Total number of labels
+                    total += labels.size(0)
+                    #######################
+                    #  USE GPU FOR MODEL  #
+                    #######################
+                    # Total correct predictions
+                    _m_loss = criterion(outputs, labels).item()
+                    correct += _m_loss
+                    print('Test Iteration: {}. Loss: {}'.format(_iter, _m_loss))
+
+                    predicted = data_loader.decode_output_to_label(outputs)
+
+                    predicted_img = train_dataset.decode_segmap(predicted)
+                    label_img = train_dataset.decode_segmap(labels.cpu())
+                    viz.image(predicted_img)
+                    viz.image(label_img)
+                    del images, labels, _m_loss, predicted, predicted_img, label_img
+                avg = correct / total
+
+                # Print Loss
+                print('Iteration: {}. Avg_Loss: {}'.format(iter, avg))
+                viz.text('Iteration: {}. Avg_Loss: {}'.format(iter, avg))
+
+        print('Epoch: {}, Iteration: {}. Avg_Loss: {}, {} seconds elapsed'.format(epoch, iter, total_loss/epoch, str(time.time() - t)))
+
+
+if __name__ == '__main__':
+    assert LooseVersion(torch.__version__) >= LooseVersion('0.4.0'), \
+        'PyTorch>=0.4.0 is required'
+    main()

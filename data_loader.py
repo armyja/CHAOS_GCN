@@ -1,4 +1,5 @@
 import math
+import torch
 
 import numpy as np
 from torch.utils.data.dataset import Dataset
@@ -8,10 +9,28 @@ import os
 from utils.utils import *
 
 
+# 1 x n_class x height x width tensor
+def decode_output_to_label(temp):
+    n, c, h, w = temp.size()
+    temp = temp.transpose(1, 2).transpose(2, 3).squeeze(0).view(h, w, c)
+    if torch.cuda.is_available():
+        temp = temp.cpu()
+    temp = temp.argmax(-1)
+    temp = torch.LongTensor(temp.view(1, 1, h, w))
+    return temp
+
+    # heightxwidth
+
+
+
+
+
 class OrganSeg(Dataset):
-    def __init__(self, current_fold, list_path, organ_id, slice_threshold=1, transforms=None):
-        self.organ_ID = organ_id
+    def __init__(self, current_fold, list_path, n_class, organ_id, slice_threshold=1, transforms=None):
+        self.organ_ID = int(organ_id)
+        self.n_class = int(n_class)
         self.transforms = transforms
+        self.augmentations = None
         image_list = open(training_set_filename(list_path, current_fold), 'r').read().splitlines()
 
         self.training_image_set = np.zeros((len(image_list)), dtype=np.int)
@@ -19,7 +38,7 @@ class OrganSeg(Dataset):
             s = image_list[i].split(' ')
             self.training_image_set[i] = int(s[0])
 
-        slice_list = open(list_training(list_path), 'r').read().splitlines()
+        slice_list = open(list_training_all(list_path), 'r').read().splitlines()
         self.slices = len(slice_list)
         self.image_ID = np.zeros(self.slices, dtype=np.int)
         self.slice_ID = np.zeros(self.slices, dtype=np.int)
@@ -45,50 +64,106 @@ class OrganSeg(Dataset):
         # slice_threshold = min_pixels = 0 means all organ
         self.active_index = [l for l, p in enumerate(self.pixels)
                              if p >= min_pixels and self.image_ID[l] in self.training_image_set]  # true active
+        colors = [  #
+            [0, 0, 0],
+            [128, 64, 128],
+            [244, 35, 232],
+            [70, 70, 70],
+            [102, 102, 156],
+            [190, 153, 153],
+            [153, 153, 153],
+            [250, 170, 30],
+            [220, 220, 0],
+            [107, 142, 35],
+        ]
 
-        self.active_index = [l for l, p in enumerate(self.pixels)
-                             if self.image_ID[l] in self.training_image_set]  # true active
+        self.label_colours = dict(zip(range(self.n_class), colors))
 
     def __getitem__(self, index):
         # stuff
-        image_path = 'Image/Train/Images/'
-        mask_path = 'Mask/Train/Images/'
-        image = Image.open(image_path + self.list[index])
-        image = image.convert('RGB')
-        mask = Image.open(mask_path + self.list[index])
-        mask = mask.convert('L')
+        self.index1 = self.active_index[index]
+        image1 = dcm2npy(self.image_filename[self.index1]).astype(np.float32)
+        label1 = png2npy(self.label_filename[self.index1])
+        width = label1.shape[0]
+        height = label1.shape[1]
+        img = np.repeat(image1.reshape(1, width, height), 3, axis=0)
+        lbl = label1.reshape(1, width, height)
+
+        if self.augmentations is not None:
+            img, lbl = self.augmentations(img, lbl)
+
         if self.transforms is not None:
-            image = self.transforms(image)
-            mask = self.transforms(mask)
-        # If the transform variable is not empty
-        # then it applies the operations in the transforms with the order that it is created.
-        return (image, mask)
+            img = self.transforms(img)
+            lbl = self.transforms(lbl)
+
+        return img, lbl
+
+    def decode_segmap(self, temp):
+        n, c, h, w = temp.size()
+        temp = temp.view(h, w)
+        temp = temp.numpy()
+        temp = temp.astype(np.int8)
+        r = temp.copy()
+        g = temp.copy()
+        b = temp.copy()
+        for l in range(0, self.n_class):
+            r[temp == l] = self.label_colours[l][0]
+            g[temp == l] = self.label_colours[l][1]
+            b[temp == l] = self.label_colours[l][2]
+
+        rgb = np.zeros((3, temp.shape[0], temp.shape[1]))
+        rgb[0, :, :] = r
+        rgb[1, :, :] = g
+        rgb[2, :, :] = b
+        return rgb
 
     def __len__(self):
-        return len(self.list)  # of how many data(images?) you have
+        return len(self.active_index)  # of how many data(images?) you have
 
 
-class LungSegTest(Dataset):
-    def __init__(self, path='Image/Test/Images', transforms=None):
-        self.path = path
-        self.list = os.listdir(self.path)
-
+class OrganTest(Dataset):
+    def __init__(self, current_fold, list_path, transforms=None):
+        self.augmentations = None
         self.transforms = transforms
+        image_list = open(testing_set_filename(list_path, current_fold), 'r').read().splitlines()
+
+        self.testing_image_set = np.zeros((len(image_list)), dtype=np.int)
+        for i in range(len(image_list)):
+            s = image_list[i].split(' ')
+            self.testing_image_set[i] = int(s[0])
+
+        slice_list = open(list_training_all(list_path), 'r').read().splitlines()
+        self.slices = len(slice_list)
+        self.image_ID = np.zeros(self.slices, dtype=np.int)
+        self.pixels = np.zeros(self.slices, dtype=np.int)
+        self.image_filename = ['' for l in range(self.slices)]
+        self.label_filename = ['' for l in range(self.slices)]
+        for l in range(self.slices):
+            s = slice_list[l].split(' ')
+            self.image_ID[l] = s[0]
+            self.image_filename[l] = s[2]  # important
+            self.label_filename[l] = s[3]  # important
+        self.active_index = [l for l, p in enumerate(self.pixels)
+                             if self.image_ID[l] in self.testing_image_set]  # true active
 
     def __getitem__(self, index):
         # stuff
-        image_path = 'Image/Test/Images/'
-        mask_path = 'Mask/Test/Images/'
-        image = Image.open(image_path + self.list[index])
-        image = image.convert('RGB')
-        mask = Image.open(mask_path + self.list[index])
-        mask = mask.convert('L')
+        self.index1 = self.active_index[index]
+        image1 = dcm2npy(self.image_filename[self.index1]).astype(np.float32)
+        label1 = png2npy(self.label_filename[self.index1])
+        width = label1.shape[0]
+        height = label1.shape[1]
+        img = np.repeat(image1.reshape(1, width, height), 3, axis=0)
+        lbl = label1.reshape(1, width, height)
+
+        if self.augmentations is not None:
+            img, lbl = self.augmentations(img, lbl)
+
         if self.transforms is not None:
-            image = self.transforms(image)
-            mask = self.transforms(mask)
-        # If the transform variable is not empty
-        # then it applies the operations in the transforms with the order that it is created.
-        return (image, mask)
+            img = self.transforms(img)
+            lbl = self.transforms(lbl)
+
+        return img, lbl
 
     def __len__(self):
-        return len(self.list)
+        return len(self.active_index)
