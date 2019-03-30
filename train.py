@@ -1,6 +1,7 @@
 import os
 import random
 import time
+from datetime import datetime
 
 import torch
 
@@ -11,6 +12,7 @@ from distutils.version import LooseVersion
 import visdom
 from torch import nn
 
+from RSTN_test import test_volume
 from loss import loss
 from utils.utils import *
 import data_loader
@@ -45,7 +47,16 @@ def parse_args():
     parser.add_argument(
         '--learning_rate',
         type=float,
-        default=1e-4,
+        default=1e-3,
+        help='', )
+    parser.add_argument(
+        '--timestamp',
+        default=datetime.fromtimestamp(time.time()),
+        help='', )
+
+    parser.add_argument(
+        '--optimizer',
+        default='Adagrad',
         help='', )
 
     return parser.parse_args()
@@ -53,8 +64,6 @@ def parse_args():
 
 def main():
     vis = visdom.Visdom()
-    vis.delete_env(env=f'main_GCN')
-    viz = visdom.Visdom(env=f'main_GCN')
     args = parse_args()
 
     print("Input arguments:")
@@ -70,11 +79,11 @@ def main():
                                          list_path=list_path_from_root(args.root_dir),
                                          n_class=args.organ_number + 1,
                                          organ_id=args.organ_id,
-                                         # slice_threshold=1 means training all images and neglect labels
-                                         slice_threshold=1,
+                                         # slice_threshold=0 means training all images and neglect labels
+                                         slice_threshold=0,
                                          transforms=None)
 
-    test_dataset = data_loader.OrganTest(current_fold=args.current_fold,
+    test_dataset = data_loader.OrganVolTest(current_fold=args.current_fold,
                                          list_path=list_path_from_root(args.root_dir),
                                          transforms=None)
     # Todo Step 2: Make Dataset Iterable
@@ -124,11 +133,12 @@ def main():
         'multi_scale_cross_entropy2d': loss.multi_scale_cross_entropy2d,
     }
     criterion = loss_dict[args.loss_type]
+    criterion_weights = torch.FloatTensor([1.0, 4.0, 8.0, 8.0, 4.0]).to(device)
+    print('criterion_weights', criterion_weights)
 
     # Todo Step 6: Instantiate Optimizer Class
 
-    optimizer = torch.optim.SGD(model.parameters(), lr=args.learning_rate,
-                                momentum=0.99,
+    optimizer = torch.optim.Adagrad(model.parameters(), lr=args.learning_rate,
                                 )
 
     # Todo Step 7: Train Model
@@ -157,7 +167,7 @@ def main():
             outputs = model(images)
 
             # Calculate Loss: softmax --> cross entropy loss
-            m_loss = criterion(outputs, labels)
+            m_loss = criterion(outputs, labels, weight=criterion_weights)
             total_loss += m_loss.item()
 
             # Getting gradients w.r.t. parameters
@@ -170,45 +180,56 @@ def main():
             print('Iteration: {}. Loss: {}, {} seconds elapsed'.format(iter, m_loss.item(), str(time.time() - m_t)))
             del images, labels, outputs, m_loss
 
-            if iter % 500 == 0:
-                # Calculate Accuracy
-                correct = 0
-                total = 0
-                # Iterate through test dataset
-                _iter = 0
-                for images, labels in test_loader:
-                    _iter += 1
-                    #######################
-                    #  USE GPU FOR MODEL  #
-                    #######################
-                    images = images.requires_grad_().to(device)
-                    labels = labels.to(device)
-                    # Forward pass only to get logits/output
-                    outputs = model(images)
-                    # Total number of labels
-                    total += labels.size(0)
-                    #######################
-                    #  USE GPU FOR MODEL  #
-                    #######################
-                    # Total correct predictions
-                    _m_loss = criterion(outputs, labels).item()
-                    correct += _m_loss
-                    print('Test Iteration: {}. Loss: {}'.format(_iter, _m_loss))
+            # if iter % 1000 == 0:
+            #     # Calculate Accuracy
+            #     correct = 0
+            #     total = 0
+            #     # Iterate through test dataset
+            #     _iter = 0
+            #     vis.delete_env(env=f'main_GCN_{args.timestamp}_{iter}')
+            #     viz = visdom.Visdom(env=f'main_GCN_{args.timestamp}_{iter}')
+            #     for images, labels in test_loader:
+            #         _iter += 1
+            #         #######################
+            #         #  USE GPU FOR MODEL  #
+            #         #######################
+            #         images = images.requires_grad_().to(device)
+            #         labels = labels.to(device)
+            #         # Forward pass only to get logits/output
+            #         outputs = model(images)
+            #         # Total number of labels
+            #         total += labels.size(0)
+            #         #######################
+            #         #  USE GPU FOR MODEL  #
+            #         #######################
+            #         # Total correct predictions
+            #         _m_loss = criterion(outputs, labels).item()
+            #         correct += _m_loss
+            #         print('Test Iteration: {}. Loss: {}'.format(_iter, _m_loss))
+            #
+            #         predicted = data_loader.decode_output_to_label(outputs)
+            #
+            #         predicted_img = train_dataset.decode_segmap(predicted)
+            #         label_img = train_dataset.decode_segmap(labels.cpu())
+            #         viz.image(predicted_img)
+            #         viz.image(label_img)
+            #         del images, labels, _m_loss, predicted, predicted_img, label_img
+            #     avg = correct / total
+            #
+            #     # Print Loss
+            #     print('Iteration: {}. Avg_Loss: {}'.format(iter, avg))
+            #     viz.text('Iteration: {}. Avg_Loss: {}'.format(iter, avg))
 
-                    predicted = data_loader.decode_output_to_label(outputs)
+        snapshot_path = snapshot_path_from_root(args.root_dir)
+        snapshot_name = f'main_GCN_{args.timestamp}_{iter}.pkl'
+        os.makedirs(snapshot_path, exist_ok=True)
+        torch.save(model.state_dict(), os.path.join(snapshot_path, snapshot_name))
 
-                    predicted_img = train_dataset.decode_segmap(predicted)
-                    label_img = train_dataset.decode_segmap(labels.cpu())
-                    viz.image(predicted_img)
-                    viz.image(label_img)
-                    del images, labels, _m_loss, predicted, predicted_img, label_img
-                avg = correct / total
+        test_volume(net=model, test_loader=test_loader, test_dataset=test_dataset, snapshot_file_name=snapshot_name, args=args)
 
-                # Print Loss
-                print('Iteration: {}. Avg_Loss: {}'.format(iter, avg))
-                viz.text('Iteration: {}. Avg_Loss: {}'.format(iter, avg))
+        print('Epoch: {}, Iteration: {}. Avg_Loss: {}, {} seconds elapsed'.format(epoch, iter, total_loss/len(train_dataset), str(time.time() - t)))
 
-        print('Epoch: {}, Iteration: {}. Avg_Loss: {}, {} seconds elapsed'.format(epoch, iter, total_loss/epoch, str(time.time() - t)))
+
 
 
 if __name__ == '__main__':

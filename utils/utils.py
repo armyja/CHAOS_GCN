@@ -39,8 +39,13 @@ def testing_set_filename(list_path, current_fold):
     return os.path.join(list_path, 'testing_' + 'FD' + str(current_fold) + '.txt')
 
 
+def snapshot_path_from_root(root):
+    return os.path.join(root, 'snapshots')
+
+
 def list_path_from_root(root):
     return os.path.join(root, 'lists')
+
 
 def list_training_all(list_path):
     return os.path.join(list_path, 'training.txt')
@@ -53,6 +58,7 @@ def dcm2npy(dcm):
     data = np.zeros(array.shape, dtype=np.int16)
     data[:, :, :] = array
     return data
+
 
 # Mapping
 # 0 is background

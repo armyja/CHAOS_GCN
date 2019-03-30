@@ -5,6 +5,12 @@ The impementation of [CHAOS - Combined (CT-MR) Healthy Abdominal Organ Segmentat
 
 ## Dataset
 
+## Data Analysis
 
+liver
+
+left kidney
+right kidney
+spleen
 
 ## Requirements
