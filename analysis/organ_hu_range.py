@@ -7,7 +7,7 @@ from utils import utils
 # 2 is right kidney
 # 3 is left kidney
 # 4 is spleen
-from utils.utils import *
+from utils import *
 
 
 def class_mapping(input_value):

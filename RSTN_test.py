@@ -8,9 +8,8 @@ import visdom
 
 import build_model
 import data_loader
-import utils.fast_functions as ff
 
-from utils.utils import *
+from utils import *
 
 
 ####################################################################################################
@@ -159,14 +158,17 @@ def test_volume(net, test_loader, test_dataset, snapshot_file_name, args):
         preds = test_dataset.decode_segmap(torch.from_numpy(preds), )
         all = torch.IntTensor(s * 3, 3, h, w)
         for i in range(s):
-            all[i * 2] = torch.from_numpy(preds[i])
-            all[i * 2 + 1, :, :, :] = torch.from_numpy(labels[i])
+            all[i * 3] = torch.from_numpy(preds[i])
+            all[i * 3 + 1, :, :, :] = torch.from_numpy(labels[i])
+            all[i * 3 + 2, :, :, :] = images[0][i]/4
         viz.images(all, 6, 1,
                    opts=dict(title=f'{j}_1:{DSC[j - 1][0]}_2:{DSC[j - 1][1]}_3:{DSC[j - 1][2]}_4:{DSC[j - 1][3]}_'))
 
     for k in range(args.organ_number):
         viz.text(f'Snapshot {snapshot_file_name}: n_class={k + 1}: average DSC = ' + str(np.mean(DSC[:, k])) + ' .')
         print(f'Snapshot {snapshot_file_name}: n_class={k + 1}: average DSC = ' + str(np.mean(DSC[:, k])) + ' .')
+
+    return DSC
 
 
 if __name__ == '__main__':

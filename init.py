@@ -10,7 +10,7 @@ import time
 
 import numpy as np
 
-from utils.utils import *
+from utils import *
 
 
 def get_patients(path):
@@ -29,7 +29,7 @@ def parse_args():
 
     parser.add_argument(
         '--folds',
-        default=5,
+        default=4,
         type=int,
         help='')
     parser.add_argument(
@@ -160,8 +160,6 @@ def training_list(args):
         output.close()
     print('Initialization is done.')
     exit(0)
-
-
 
 def main():
     args = parse_args()

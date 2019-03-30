@@ -6,7 +6,7 @@ from torch.utils.data.dataset import Dataset
 from PIL import Image
 import os
 
-from utils.utils import *
+from utils import *
 
 
 # 1 x n_class x height x width tensor
@@ -23,7 +23,7 @@ def decode_output_to_label(temp):
 
 
 class OrganSeg(Dataset):
-    def __init__(self, current_fold, list_path, n_class, organ_id, slice_threshold=0, transforms=None):
+    def __init__(self, current_fold, list_path, n_class, organ_id, slice_threshold=0, transforms=True):
         self.organ_ID = int(organ_id)
         self.n_class = int(n_class)
         self.transforms = transforms
@@ -90,8 +90,21 @@ class OrganSeg(Dataset):
             img, lbl = self.augmentations(img, lbl)
 
         if self.transforms is not None:
-            img = self.transforms(img)
-            lbl = self.transforms(lbl)
+            img, lbl = self.transform(img, lbl)
+
+        return img, lbl
+
+    def transform(self, img, lbl):
+        W = 256
+        H = 256
+        if lbl.shape[1] > H and lbl.shape[2] > W:
+            X = int((lbl.shape[1] - H) / 2)
+            Y = int((lbl.shape[2] - W) / 2)
+            lbl = lbl[:, X:X + H, Y:Y + W]
+        if img.shape[1] > H and img.shape[2] > W:
+            X = int((img.shape[1] - H) / 2)
+            Y = int((img.shape[2] - W) / 2)
+            img = img[:, X:X + H, Y:Y + W]
 
         return img, lbl
 
