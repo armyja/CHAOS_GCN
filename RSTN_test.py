@@ -92,18 +92,19 @@ def main():
         # '/media/jeffrey/D/CHAOS/snapshots/main_GCN_2019-03-29 21:11:03.548498_937.pkl',
         # '/media/jeffrey/D/CHAOS/snapshots/main_GCN_2019-03-29 21:11:03.548498_1874.pkl',
         # '/media/jeffrey/D/CHAOS/snapshots/main_GCN_2019-03-29 21:11:03.548498_2811.pkl',
-        # '/media/jeffrey/D/CHAOS/snapshots/main_GCN_2019-03-29 21:11:03.548498_3748.pkl',  # best 8786
+        # '/media/jeffrey/D/CHAOS/snapshots/main_GCN_2019-03-29 21:11:=03.548498_3748.pkl',  # best 8786
         # '/media/jeffrey/D/CHAOS/snapshots/main_GCN_2019-03-29 21:59:55.931487_937.pkl',
         # '/media/jeffrey/D/CHAOS/snapshots/main_GCN_20190329_223721_937.pkl',  # 7665
         # '/media/jeffrey/D/CHAOS/snapshots/main_GCN_20190329_223721_1874.pkl',
         # '/media/jeffrey/D/CHAOS/snapshots/main_GCN_20190329_223721_2811.pkl',
-        '/media/jeffrey/D/CHAOS/snapshots/main_GCN_20190329_223721_3748.pkl',  # 8666
+        # '/media/jeffrey/D/CHAOS/snapshots/main_GCN_20190329_223721_3748.pkl',  # 8666
         # '/media/jeffrey/D/CHAOS/snapshots/main_GCN_20190329_223721_4685.pkl',
         # '/media/jeffrey/D/CHAOS/snapshots/main_GCN_20190329_223721_5622.pkl',
-        '/media/jeffrey/D/CHAOS/snapshots/main_GCN_20190329_223721_6559.pkl'
+        # '/media/jeffrey/D/CHAOS/snapshots/main_GCN_20190329_223721_6559.pkl'
         # '/media/jeffrey/D/CHAOS/snapshots/main_GCN_20190330_154159_1417.pkl'  # 7663
         # '/media/jeffrey/D/CHAOS/snapshots/main_GCN_20190330_124553_30001.pkl',
         # '/media/jeffrey/D/CHAOS/snapshots/main_GCN_20190330_124553_47001.pkl',
+        '/media/jeffrey/D/CHAOS/snapshots/main_GCN_20190330_124553_17001.pkl',  # 8887
     ]
     # snapshot_file =
     for snapshot_file in snapshot_files:
