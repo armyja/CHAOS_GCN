@@ -1,8 +1,9 @@
 TRAINING_ROOT='/home/ubuntu/MyFiles/GCN'
-RESUME='main_GCN_20190330_124553_17001.pkl'
+RESUME='0'
+RESUME=${TRAINING_ROOT}/snapshots/main_GCN_20190330_124553_30001.pkl
 TRAINING_TIMESTAMP=$(date +'%Y%m%d_%H%M%S')
 python train.py \
---resume ${TRAINING_ROOT}/snapshots/${RESUME} \
+--resume ${RESUME} \
 --batch_size 8 \
 --epoch 100 \
 --learning_rate 1e-4 \

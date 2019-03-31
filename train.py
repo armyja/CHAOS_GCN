@@ -82,8 +82,6 @@ def main():
     for key, val in vars(args).items():
         print("{:16} {}".format(key, val))
 
-
-
     # Todo Step 1: Load Dataset
     '''
     STEP 1: LOADING DATASET
@@ -136,7 +134,7 @@ def main():
     model.to(device)
 
     iter = 0
-    if args.resume != '':
+    if args.resume != '0':
         # main_GCN_20190330_124553_16001.pkl
         snapshot_resume = args.resume
         iter = int(snapshot_resume.split('_')[-1].split('.')[0])
@@ -256,19 +254,19 @@ def main():
                 os.makedirs(snapshot_path, exist_ok=True)
                 torch.save(model.state_dict(), os.path.join(snapshot_path, snapshot_name))
                 DSC = test_volume(net=model, test_loader=test_loader, test_dataset=test_dataset,
-                            snapshot_file_name=snapshot_name, args=args)
+                                  snapshot_file_name=snapshot_name, args=args)
 
                 means = np.zeros(DSC.shape[1])
-                for i in range (DSC.shape[1]):
+                for i in range(DSC.shape[1]):
                     means[i] = np.mean(DSC[:, i])
                 rank = means.argsort()
                 rank[rank == 3] = 2
                 rank[rank == 0] = 1
                 ratio = 4
-                criterion_weights = torch.FloatTensor([1.0, 1.0 * rank[0]*ratio,
-                                                       1.0 * rank[1] * ratio,
+                criterion_weights = torch.FloatTensor([1.0, 1.0 * rank[3] * ratio,
                                                        1.0 * rank[2] * ratio,
-                                                       1.0 * rank[3] * ratio).to(device)
+                                                       1.0 * rank[1] * ratio,
+                                                       1.0 * rank[0] * ratio]).to(device)
                 print('criterion_weights', criterion_weights)
         if iter_per_epoch == 0:
             iter_per_epoch = flag
