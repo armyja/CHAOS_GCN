@@ -104,7 +104,8 @@ def main():
         # '/media/jeffrey/D/CHAOS/snapshots/main_GCN_20190330_154159_1417.pkl'  # 7663
         # '/media/jeffrey/D/CHAOS/snapshots/main_GCN_20190330_124553_30001.pkl',
         # '/media/jeffrey/D/CHAOS/snapshots/main_GCN_20190330_124553_47001.pkl',
-        '/media/jeffrey/D/CHAOS/snapshots/main_GCN_20190330_124553_17001.pkl',  # 8887
+        # '/media/jeffrey/D/CHAOS/snapshots/main_GCN_20190330_124553_17001.pkl',  # 8887
+        '/home/ubuntu/MyFiles/GCN/snapshots/main_GCN_All_20190331_054658_35001.pkl'
     ]
     # snapshot_file =
     for snapshot_file in snapshot_files:
@@ -112,8 +113,13 @@ def main():
 
         net = build_model.FCN_GCN(num_classes=args.organ_number + 1)
         net.to(device)
-        net.load_state_dict(torch.load(snapshot_file))
-        net.eval()
+        if 'All' in snapshot_file:
+            checkpoint = torch.load(snapshot_file)
+            net.load_state_dict(checkpoint['net'])
+            net.eval()
+        else:
+            net.load_state_dict(torch.load(snapshot_file))
+            net.eval()
         patient = 2 - 1
         slice_index = 20 - 1
         test_volume(net, test_loader, test_dataset, file_name, args, patient, slice_index)
@@ -123,8 +129,8 @@ def test_volume(net, test_loader, test_dataset, snapshot_file_name, args, patien
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     # Test Code
     vis = visdom.Visdom()
-    vis.delete_env(env=f'main_GCN_test{snapshot_file_name}')
-    viz = visdom.Visdom(env=f'main_GCN_test_{snapshot_file_name}')
+    vis.delete_env(env=f'GCN_test{snapshot_file_name}')
+    viz = visdom.Visdom(env=f'GCN_test_{snapshot_file_name}')
     j = 0
     DSC = np.zeros((len(test_loader), args.organ_number), dtype=np.float)
     for images, labels in test_loader:
@@ -173,7 +179,8 @@ def test_volume(net, test_loader, test_dataset, snapshot_file_name, args, patien
             all[i * 3] = torch.from_numpy(preds[i])
             all[i * 3 + 1, :, :, :] = torch.from_numpy(labels[i])
             all[i * 3 + 2, :, :, :] = images[0][i] / 4
-        viz.images(all[slice_index * 3:slice_index * 3 + 3, :, :, :], 3, 1, opts=dict(title=f'{patient+1}_{slice_index+1}'))
+        if slice_index is not None:
+            viz.images(all[slice_index * 3:slice_index * 3 + 3, :, :, :], 3, 1, opts=dict(title=f'{patient+1}_{slice_index+1}'))
         viz.images(all, 6, 1,
                    opts=dict(title=f'{j}_1:{DSC[j - 1][0]}_2:{DSC[j - 1][1]}_3:{DSC[j - 1][2]}_4:{DSC[j - 1][3]}_'))
 

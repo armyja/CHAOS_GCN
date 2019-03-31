@@ -133,18 +133,6 @@ def main():
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     model.to(device)
 
-    iter = 0
-    if args.resume != '0':
-        # main_GCN_20190330_124553_16001.pkl
-        snapshot_resume = args.resume
-        iter = int(snapshot_resume.split('_')[-1].split('.')[0])
-        args.timestamp = snapshot_resume.split('GCN_')[1].split(f'_{iter}')[0]
-        snapshot_path = snapshot_path_from_root(args.root_dir)
-        snapshot_file = os.path.join(snapshot_path, snapshot_resume)
-        model.load_state_dict(torch.load(snapshot_file))
-        model.eval()
-        print(f'{snapshot_file} loaded, iter={iter}')
-
         # Todo Step 5: Instantiate Loss Class
 
     '''
@@ -163,6 +151,27 @@ def main():
 
     optimizer = torch.optim.Adagrad(model.parameters(), lr=args.learning_rate,
                                     )
+
+    iter = 0
+    if args.resume != '0':
+        # main_GCN_20190330_124553_16001.pkl
+        snapshot_resume = args.resume
+        iter = int(snapshot_resume.split('_')[-1].split('.')[0])
+        args.timestamp = snapshot_resume.split('GCN_')[1].split(f'_{iter}')[0]
+        snapshot_path = snapshot_path_from_root(args.root_dir)
+        snapshot_file = os.path.join(snapshot_path, snapshot_resume)
+        if 'All' in snapshot_resume:
+            checkpoint = torch.load(snapshot_file)
+            model.load_state_dict(checkpoint['net'])
+            model.eval()
+            optimizer.load_state_dict(checkpoint['optimizer'])
+            iter = checkpoint['iter']
+            iter_per_epoch = checkpoint['iter_per_epoch']
+            print(f'iter_per_epoch: {iter_per_epoch}')
+        else:
+            model.load_state_dict(torch.load(snapshot_file))
+            model.eval()
+        print(f'{snapshot_file} loaded, iter={iter}')
 
     # Todo Step 7: Train Model
 
@@ -197,17 +206,15 @@ def main():
             # labels n 1 h w init64
             criterion_weights = torch.FloatTensor([1.0, 1.0, 1.0, 1.0, 1.0])
 
+            n, c, h, w = labels.shape
             for i in range(args.organ_number + 1):
-                n, c, h, w = labels.shape
                 total = (labels == i).sum().item()
                 if total != 0:
                     criterion_weights[i] = n * c * h * w / total
                 else:
                     criterion_weights[i] = 2.0
-
             criterion_weights = criterion_weights.to(device)
-            if iter % 100 == 0:
-                print('criterion_weights', criterion_weights)
+
             m_loss = criterion(outputs, labels, weight=criterion_weights)
             total_loss += m_loss.item()
 
@@ -267,11 +274,14 @@ def main():
             #     # Print Loss
             #     print('Iteration: {}. Avg_Loss: {}'.format(iter, avg))
             #     viz.text('Iteration: {}. Avg_Loss: {}'.format(iter, avg))
-            if iter % 1000 == 0:
+            if iter % 1000 == 1:
                 snapshot_path = snapshot_path_from_root(args.root_dir)
-                snapshot_name = f'main_GCN_{args.timestamp}_{iter}.pkl'
+                snapshot_name = f'main_GCN_All_{args.timestamp}_{iter}.pkl'
                 os.makedirs(snapshot_path, exist_ok=True)
-                torch.save(model.state_dict(), os.path.join(snapshot_path, snapshot_name))
+                state = {'net': model.state_dict(), 'optimizer': optimizer.state_dict(), 'iter': iter,
+                         'iter_per_epoch': iter_per_epoch,
+                         }
+                torch.save(state, os.path.join(snapshot_path, snapshot_name))
                 DSC = test_volume(net=model, test_loader=test_loader, test_dataset=test_dataset,
                                   snapshot_file_name=snapshot_name, args=args)
 
