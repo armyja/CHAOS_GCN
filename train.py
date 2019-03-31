@@ -179,7 +179,6 @@ def main():
     for epoch in range(num_epochs):
         t = time.time()
         total_loss = 0.0
-        a = enumerate(train_loader)
         for i, (images, labels) in enumerate(train_loader):
             m_t = time.time()
             #######################

@@ -85,7 +85,7 @@ class FCN_GCN(nn.Module):
 
         )
 
-    def forward(self, x):
+    def forward(self, x, debug=False, viz=None, patient=None, slice_index=None):
         # input = x  # 256
         x = self.conv1(x)
         x = self.bn0(x)
@@ -101,6 +101,12 @@ class FCN_GCN(nn.Module):
         gc_fm3 = self.br3(self.gcn3(fm3))
         gc_fm4 = self.br4(self.gcn4(fm4))
 
+        if debug is True:
+            self.heatmap(gc_fm1, viz, patient, slice_index, 'gc_fm1_0')
+            self.heatmap(gc_fm2, viz, patient, slice_index, 'gc_fm2_0')
+            self.heatmap(gc_fm3, viz, patient, slice_index, 'gc_fm3_0')
+            self.heatmap(gc_fm4, viz, patient, slice_index, 'gc_fm4_0')
+
         gc_fm4 = F.upsample(gc_fm4, fm3.size()[2:], mode='bilinear', align_corners=True)
         gc_fm3 = F.upsample(self.br5(gc_fm3 + gc_fm4), fm2.size()[2:], mode='bilinear', align_corners=True)
         # gc_fm3 = F.upsample(self.br5(gc_fm3), fm2.size()[2:], mode='bilinear', align_corners=True)
@@ -109,6 +115,19 @@ class FCN_GCN(nn.Module):
 
         gc_fm1 = F.upsample(self.br8(gc_fm1), scale_factor=2, mode='bilinear', align_corners=True)
 
+        if debug is True:
+            self.heatmap(gc_fm4, viz, patient, slice_index, 'gc_fm1_4')
+            self.heatmap(gc_fm3, viz, patient, slice_index, 'gc_fm1_3')
+            self.heatmap(gc_fm2, viz, patient, slice_index, 'gc_fm1_2')
+            self.heatmap(gc_fm1, viz, patient, slice_index, 'gc_fm1_1')
+
         out = self.br9(gc_fm1)
 
         return out
+    
+    def heatmap(self, input, viz, patient, slice_index, name):
+        n, c, h, w = input.shape
+        fm1 = input.view(-1, h, w)
+        c, h, w = fm1.shape
+        for i in range(c):
+            viz.heatmap(fm1[i], opts=dict(title=f'{patient+1}_{slice_index+1}_{name}_input_class_{i}'))
