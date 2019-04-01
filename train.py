@@ -23,11 +23,11 @@ def parse_args():
     parser = argparse.ArgumentParser()
     # Model related arguments
     parser.add_argument('--batch_size',
-                        default=1,
+                        default=8,
                         type=int,
                         help="a name for identifying the model")
     parser.add_argument('--epoch',
-                        default=8,
+                        default=10,
                         type=int,
                         help="a name for identifying the model")
     parser.add_argument('--current_fold',
@@ -124,7 +124,8 @@ def main():
     # output_dim = N x C x H x W
     # C = num_classes
 
-    model = build_model.FCN_GCN(num_classes=args.organ_number + 1)
+    # model = build_model.FCN_GCN(num_classes=args.organ_number + 1)
+    model = build_model.FCN_GCN(num_classes=2)
 
     #######################
     #  USE GPU FOR MODEL  #
@@ -204,16 +205,18 @@ def main():
 
             # Calculate Loss: softmax --> cross entropy loss
             # labels n 1 h w init64
-            criterion_weights = torch.FloatTensor([1.0, 1.0, 1.0, 1.0, 1.0])
 
-            n, c, h, w = labels.shape
-            for i in range(args.organ_number + 1):
-                total = (labels == i).sum().item()
-                if total != 0:
-                    criterion_weights[i] = n * c * h * w / total
-                else:
-                    criterion_weights[i] = 2.0
-            criterion_weights = criterion_weights.to(device)
+            # dynamically change criterion weights
+            # criterion_weights = torch.FloatTensor([1.0, 1.0, 1.0, 1.0, 1.0])
+            #
+            # n, c, h, w = labels.shape
+            # for i in range(args.organ_number + 1):
+            #     total = (labels == i).sum().item()
+            #     if total != 0:
+            #         criterion_weights[i] = n * c * h * w / total
+            #     else:
+            #         criterion_weights[i] = 2.0
+            # criterion_weights = criterion_weights.to(device)
 
             m_loss = criterion(outputs, labels, weight=criterion_weights)
             total_loss += m_loss.item()
@@ -226,13 +229,11 @@ def main():
 
             iter += 1
             flag += 1
-            print(f'Iteration: {iter}. Loss: {round(m_loss.item(), 5)}, weights: ' + \
-                  f'{round(criterion_weights[0].item(), 3)}, ' + \
-                  f'{round(criterion_weights[1].item(), 3)}, ' + \
-                  f'{round(criterion_weights[2].item(), 3)}, ' + \
-                  f'{round(criterion_weights[3].item(), 3)}, ' + \
-                  f'{round(criterion_weights[4].item(), 3)}, ' + \
-                  f'{round(time.time() - m_t, 2)} seconds elapsed')
+            print('Iteration: {}. Loss: {:.5f}, weights: {:.2f} seconds elapsed'.format(
+                iter,
+                m_loss.item(),
+                time.time() - m_t),
+            )
             del images, labels, outputs, m_loss
 
             # if iter % 1000 == 0:
@@ -282,6 +283,7 @@ def main():
                          'iter_per_epoch': iter_per_epoch,
                          }
                 torch.save(state, os.path.join(snapshot_path, snapshot_name))
+
                 DSC = test_volume(net=model, test_loader=test_loader, test_dataset=test_dataset,
                                   snapshot_file_name=snapshot_name, args=args)
 

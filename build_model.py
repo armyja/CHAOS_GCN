@@ -1,3 +1,4 @@
+import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torchvision import models
@@ -41,6 +42,8 @@ class BR(nn.Module):
         x_res = self.conv2(x_res)
 
         x = x + x_res
+
+        # x = torch.sigmoid(x)
 
         return x
 
