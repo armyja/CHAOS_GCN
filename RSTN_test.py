@@ -108,16 +108,20 @@ def main():
         # '/home/ubuntu/MyFiles/GCN/snapshots/main_GCN_20190330_124553_17001.pkl',  # 8887
         # '/home/ubuntu/MyFiles/GCN/snapshots/main_GCN_All_20190401_072416_1001.pkl',  # 8786
         # '/home/ubuntu/MyFiles/GCN/snapshots/main_GCN_All_20190401_075415_2001.pkl',  # 8786
-        # '/home/ubuntu/MyFiles/GCN/snapshots/main_GCN_All_20190401_082623_2001.pkl',  # 8775
-        # '/home/ubuntu/MyFiles/GCN/snapshots/main_GCN_All_20190401_092224_2001.pkl',  # 8786
-        '/home/ubuntu/MyFiles/GCN/snapshots/main_GCN_All_20190401_104845_2001.pkl',  # 8786
+        # '/home/ubuntu/MyFiles/GCN/snapshots/main_GCN_All_20190401_082623_2001.pkl',  # 8775 _1
+        # '/home/ubuntu/MyFiles/GCN/snapshots/main_GCN_All_20190401_092224_2001.pkl',  # 8786 _2
+        # '/home/ubuntu/MyFiles/GCN/snapshots/main_GCN_All_20190401_104845_2001.pkl',  # 8786 _3
+        # '/home/ubuntu/MyFiles/GCN/snapshots/main_GCN_All_20190401_134340_2001.pkl',  # 8786 _4
+        # '/home/ubuntu/MyFiles/GCN/snapshots/main_GCN_All_20190402_083113_2001.pkl',  # 8786 _5
+        # '/home/ubuntu/MyFiles/GCN/snapshots/main_GCN_All_20190402_084907_2001.pkl',  # 8786 _5.5
+        '/home/ubuntu/MyFiles/GCN/snapshots/main_GCN_All_20190402_091848_2001.pkl',  # 8786 _5.5
         # '/home/ubuntu/MyFiles/GCN/snapshots/main_GCN_All_20190331_054658_35001.pkl'
     ]
     # snapshot_file =
     for snapshot_file in snapshot_files:
         file_name = snapshot_file.split('/')[-1]
 
-        net = build_model.FCN_GCN(num_classes=args.organ_number + 1)
+        net = build_model.FCN_GCN_6(num_classes=args.organ_number + 1)
         net.to(device)
         if 'All' in snapshot_file:
             checkpoint = torch.load(snapshot_file)
