@@ -1,5 +1,6 @@
 import os
 import random
+from torchvision import transforms
 import time
 from datetime import datetime
 
@@ -144,7 +145,7 @@ def main():
         'multi_scale_cross_entropy2d': loss.multi_scale_cross_entropy2d,
     }
     criterion = loss_dict[args.loss_type]
-    criterion_weights = torch.FloatTensor([1.0, 4.0, 8.0, 8.0, 4.0]).to(device)
+    criterion_weights = torch.FloatTensor([1.0, 4.0, 8.0, 8.0, 8.0]).to(device)
     print('criterion_weights', criterion_weights)
 
     # Todo Step 6: Instantiate Optimizer Class
@@ -274,7 +275,7 @@ def main():
             #     # Print Loss
             #     print('Iteration: {}. Avg_Loss: {}'.format(iter, avg))
             #     viz.text('Iteration: {}. Avg_Loss: {}'.format(iter, avg))
-            if iter % 1000 == 1:
+            if iter % 2000 == 1:
                 snapshot_path = snapshot_path_from_root(args.root_dir)
                 snapshot_name = f'main_GCN_All_{args.timestamp}_{iter}.pkl'
                 os.makedirs(snapshot_path, exist_ok=True)

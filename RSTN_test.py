@@ -43,7 +43,7 @@ def parse_args():
         help='')
     parser.add_argument(
         '--organ_id',
-        default=1,
+        default=0,
         type=int,
         help='')
     parser.add_argument(
@@ -114,14 +114,20 @@ def main():
         # '/home/ubuntu/MyFiles/GCN/snapshots/main_GCN_All_20190401_134340_2001.pkl',  # 8786 _4
         # '/home/ubuntu/MyFiles/GCN/snapshots/main_GCN_All_20190402_083113_2001.pkl',  # 8786 _5
         # '/home/ubuntu/MyFiles/GCN/snapshots/main_GCN_All_20190402_084907_2001.pkl',  # 8786 _5.5
-        '/home/ubuntu/MyFiles/GCN/snapshots/main_GCN_All_20190402_091848_2001.pkl',  # 8786 _5.5
+        # '/home/ubuntu/MyFiles/GCN/snapshots/main_GCN_All_20190402_091848_2001.pkl',  # 8786 _5.5
+        # '/home/ubuntu/MyFiles/GCN/snapshots/main_GCN_All_20190402_141629_2001.pkl',  # 8786 _5.5
+        # '/home/ubuntu/MyFiles/GCN/snapshots/main_GCN_All_20190402_143132_26001.pkl',  # 8786 _5.5
+        # '/home/ubuntu/MyFiles/GCN/snapshots/main_GCN_All_20190403_050144_14001.pkl',  # 8786 _5.5
+        # '/home/ubuntu/MyFiles/GCN/snapshots/main_GCN_All_20190403_103014_8001.pkl',  # 8786 _5.5
+        # '/home/ubuntu/MyFiles/GCN/snapshots/main_GCN_All_20190403_113937_2001.pkl',  # 8786 _5.5
+        '/home/ubuntu/MyFiles/GCN/snapshots/main_GCN_All_20190403_124518_20001.pkl',  # 8786 _5.5
         # '/home/ubuntu/MyFiles/GCN/snapshots/main_GCN_All_20190331_054658_35001.pkl'
     ]
     # snapshot_file =
     for snapshot_file in snapshot_files:
         file_name = snapshot_file.split('/')[-1]
 
-        net = build_model.FCN_GCN_6(num_classes=args.organ_number + 1)
+        net = build_model.FCN_GCN(num_classes=args.organ_number + 1)
         net.to(device)
         if 'All' in snapshot_file:
             checkpoint = torch.load(snapshot_file)
@@ -135,6 +141,7 @@ def main():
         slice_index = 21 - 1
         # slice_index = None
         test_volume(net, test_loader, test_dataset, file_name, args, patient, slice_index)
+        test_volume(net, test_loader, test_dataset, file_name, args)
 
 
 def test_volume(net, test_loader, test_dataset, snapshot_file_name, args, patient=None, slice_index=None):

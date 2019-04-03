@@ -1,10 +1,14 @@
 import math
+import random
+
 import torch
 
 import numpy as np
 from torch.utils.data.dataset import Dataset
 from PIL import Image
 import os
+
+from torchvision import transforms
 
 from utils import *
 
@@ -80,6 +84,20 @@ class OrganSeg(Dataset):
         # stuff
         self.index1 = self.active_index[index]
         image1 = dcm2npy(self.image_filename[self.index1]).astype(np.float32)
+
+        if 'T1DUAL' in self.image_filename[self.index1]:
+            self.low_range = 0.0
+            self.high_range = 1200.0
+        elif 'T2SPIR' in self.image_filename[self.index1]:
+            self.low_range = 0.0
+            self.high_range = 1800.0
+
+        np.minimum(np.maximum(image1, self.low_range, image1), self.high_range, image1)
+        if random.randint(0, 1) == 1:
+            image1 = self.high_range + self.low_range - image1
+        # image1 -= self.low_range
+        # image1 /= (self.high_range - self.low_range)
+
         label1 = png2npy(self.label_filename[self.index1])
         width = label1.shape[0]
         height = label1.shape[1]
@@ -106,6 +124,11 @@ class OrganSeg(Dataset):
             Y = int((img.shape[2] - W) / 2)
             img = img[:, X:X + H, Y:Y + W]
 
+        # transformations_train = transforms.Compose([transforms.RandomRotation(10),
+        #                                             transforms.RandomHorizontalFlip(),
+        #                                             transforms.ToTensor()])
+        # img = transformations_train(img)
+        # lbl = transformations_train(lbl)
         return img, lbl
 
     def decode_segmap(self, temp, bias=0):
@@ -160,6 +183,18 @@ class OrganTest(Dataset):
         # stuff
         self.index1 = self.active_index[index]
         image1 = dcm2npy(self.image_filename[self.index1]).astype(np.float32)
+
+        if 'T1DUAL' in self.image_filename[self.index1]:
+            self.low_range = 0.0
+            self.high_range = 1200.0
+        elif 'T2SPIR' in self.image_filename[self.index1]:
+            self.low_range = 0.0
+            self.high_range = 1800.0
+
+        np.minimum(np.maximum(image1, self.low_range, image1), self.high_range, image1)
+        # image1 -= self.low_range
+        # image1 /= (self.high_range - self.low_range)
+
         label1 = png2npy(self.label_filename[self.index1])
         width = label1.shape[0]
         height = label1.shape[1]
