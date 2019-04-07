@@ -1,4 +1,5 @@
 TRAINING_ROOT='/home/ubuntu/MyFiles/GCN'
+TRAINING_ROOT='/media/jeffrey/D/CHAOS'
 RESUME=${TRAINING_ROOT}/snapshots/main_GCN_All_20190402_124203_2001.pkl
 RESUME='0'
 CURRENT_FOLD=0

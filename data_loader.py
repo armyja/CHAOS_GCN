@@ -83,7 +83,10 @@ class OrganSeg(Dataset):
     def __getitem__(self, index):
         # stuff
         self.index1 = self.active_index[index]
-        image1 = dcm2npy(self.image_filename[self.index1]).astype(np.float32)
+        if '.dcm' in self.image_filename[self.index1]:
+            image1 = dcm2npy(self.image_filename[self.index1]).astype(np.float32)
+        elif '.npy' in self.image_filename[self.index1]:
+            image1 = npy2npy(self.image_filename[self.index1]).astype(np.float32)
 
         if 'T1DUAL' in self.image_filename[self.index1]:
             self.low_range = 0.0
@@ -98,7 +101,10 @@ class OrganSeg(Dataset):
         # image1 -= self.low_range
         # image1 /= (self.high_range - self.low_range)
 
-        label1 = png2npy(self.label_filename[self.index1])
+        if '.png' in self.label_filename[self.index1]:
+            label1 = png2npy(self.label_filename[self.index1])
+        elif '.npy' in self.label_filename[self.index1]:
+            label1 = npy2npy(self.label_filename[self.index1], mask=True)
         width = label1.shape[0]
         height = label1.shape[1]
         img = np.repeat(image1.reshape(1, width, height), 3, axis=0)
@@ -271,14 +277,30 @@ class OrganVolTest(Dataset):
         self.index1 = self.testing_image_set[index]
         self.active_index = [l for l, p in enumerate(self.pixels)
                              if self.image_ID[l] == self.index1]  # true active
-        tmp = dcm2npy(self.image_filename[self.active_index[0]]).astype(np.float32)
+        if '.dcm' in self.image_filename[self.active_index[0]]:
+            tmp = dcm2npy(self.image_filename[self.active_index[0]]).astype(np.float32)
+        elif '.npy' in self.image_filename[self.active_index[0]]:
+            tmp = npy2npy(self.image_filename[self.active_index[0]]).astype(np.float32)
+        # tmp = dcm2npy(self.image_filename[self.active_index[0]]).astype(np.float32)
         width = tmp.shape[0]
         height = tmp.shape[1]
         img_vol = np.zeros((len(self.active_index), 3, height, width), dtype=np.float32)
         lbl_vol = np.zeros((len(self.active_index), height, width), dtype=np.int64)
         for idx, id in enumerate(self.active_index):
-            image1 = dcm2npy(self.image_filename[id]).astype(np.float32)
-            label1 = png2npy(self.label_filename[id])
+
+            if '.dcm' in self.image_filename[id]:
+                image1 = dcm2npy(self.image_filename[id]).astype(np.float32)
+            elif '.npy' in self.image_filename[id]:
+                image1 = npy2npy(self.image_filename[id]).astype(np.float32)
+
+            # image1 = dcm2npy(self.image_filename[id]).astype(np.float32)
+
+            if '.png' in self.label_filename[id]:
+                label1 = png2npy(self.label_filename[id])
+            elif '.npy' in self.label_filename[id]:
+                label1 = npy2npy(self.label_filename[id], mask=True)
+
+            # label1 = png2npy(self.label_filename[id])
             img = np.repeat(image1.reshape(1, width, height), 3, axis=0)
             lbl = label1.reshape(1, width, height)
             img_vol[idx, :] = img

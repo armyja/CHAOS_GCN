@@ -59,6 +59,20 @@ def dcm2npy(dcm):
     data[:, :, :] = array
     return data
 
+def npy2npy(image, mask=False):
+    array = np.load(image)
+    array = array.reshape(array.shape[0],array.shape[1], 1)
+    data = np.zeros(array.shape, dtype=np.int16)
+    data[:, :, :] = array
+    if mask is True:
+        unique_values_mask = np.unique(data)
+        gt_mask = np.zeros_like(data).astype(np.int64)
+        for unique_value in unique_values_mask:
+            gt_mask[data == unique_value] = class_mapping(unique_value)
+        return gt_mask
+
+    return data
+
 
 # Mapping
 # 0 is background

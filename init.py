@@ -45,6 +45,14 @@ def parse_args():
         default=4,
         type=int,
         help='')
+    parser.add_argument(
+        '--image_keyword',
+        default='.dcm',
+        help='')
+    parser.add_argument(
+        '--label_keyword',
+        default='.png',
+        help='')
 
     return parser.parse_args()
 
@@ -54,7 +62,7 @@ def training_list(args):
     image_list = []
     image_directory = []
     image_filename =[]
-    image_keyword = '.dcm'
+    image_keyword = args.image_keyword
     image_path = args.train_set_dir
     for directory, _, file_ in os.walk(image_path):
         for filename in sorted(file_):
@@ -70,7 +78,7 @@ def training_list(args):
     label_list = []
     label_directory = []
     label_filename = []
-    label_keyword = '.png'
+    label_keyword = args.label_keyword
     label_path = args.train_set_dir
     for directory, _, file_ in os.walk(label_path):
         # T1DUAL (in, label) (out, label)
@@ -122,8 +130,15 @@ def training_list(args):
         for j in range(slice_number):
             m_image_filename = m_image_list[j]
             m_label_filename = m_label_list[j]
-            m_image = dcm2npy(m_image_filename)
-            m_label = png2npy(m_label_filename)
+            if '.dcm' in m_image_filename:
+                m_image = dcm2npy(m_image_filename)
+            elif '.npy' in m_image_filename:
+                m_image = npy2npy(m_image_filename)
+
+            if '.png' in m_label_filename:
+                m_label = png2npy(m_label_filename)
+            elif '.npy' in m_label_filename:
+                m_label = npy2npy(m_label_filename, mask=True)
             m_average[j] = float(m_image.sum()) / (m_image.shape[0] * m_image.shape[1])
 
             for o in range(1, args.organ_number + 1):

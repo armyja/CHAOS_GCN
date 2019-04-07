@@ -275,7 +275,7 @@ def main():
             #     # Print Loss
             #     print('Iteration: {}. Avg_Loss: {}'.format(iter, avg))
             #     viz.text('Iteration: {}. Avg_Loss: {}'.format(iter, avg))
-            if iter % 2000 == 1:
+            if iter % 50 == 0:
                 snapshot_path = snapshot_path_from_root(args.root_dir)
                 snapshot_name = f'main_GCN_All_{args.timestamp}_{iter}.pkl'
                 os.makedirs(snapshot_path, exist_ok=True)
