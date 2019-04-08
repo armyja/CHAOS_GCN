@@ -155,7 +155,7 @@ def training_list(args):
             output.write('\n')
 
         output.close()
-        folds = args.folds
+    folds = args.folds
 
     print('Writing training image list.')
     for f in range(folds):

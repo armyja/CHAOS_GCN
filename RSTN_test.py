@@ -120,7 +120,8 @@ def main():
         # '/home/ubuntu/MyFiles/GCN/snapshots/main_GCN_All_20190403_050144_14001.pkl',  # 8786 _5.5
         # '/home/ubuntu/MyFiles/GCN/snapshots/main_GCN_All_20190403_103014_8001.pkl',  # 8786 _5.5
         # '/home/ubuntu/MyFiles/GCN/snapshots/main_GCN_All_20190403_113937_2001.pkl',  # 8786 _5.5
-        '/home/ubuntu/MyFiles/GCN/snapshots/main_GCN_All_20190403_124518_20001.pkl',  # 8786 _5.5
+        # '/home/ubuntu/MyFiles/GCN/snapshots/main_GCN_All_20190403_124518_20001.pkl',  # 8786 _5.5
+        '/home/ubuntu/MyFiles/GCN/snapshots/main_GCN_All_All_20190407_090219_17000.pkl',  # 8786 _5.5
         # '/home/ubuntu/MyFiles/GCN/snapshots/main_GCN_All_20190331_054658_35001.pkl'
     ]
     # snapshot_file =

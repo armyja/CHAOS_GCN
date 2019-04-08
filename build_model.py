@@ -324,6 +324,7 @@ class FCN_GCN(nn.Module):
         resnet = models.resnet50(pretrained=True)
         # input = 256x256
         self.conv0 = nn.Conv2d(3, 64, kernel_size=1, stride=1)  # 256x256, 64
+        # self.conv1 = resnet.conv1
         self.bn0 = resnet.bn1  # BatchNorm2d(64)?
         self.relu = resnet.relu
 
@@ -332,13 +333,13 @@ class FCN_GCN(nn.Module):
         self.layer2 = resnet.layer2  # res-3 o/p = 64x64,512
         self.layer3 = resnet.layer3  # res-4 o/p = 32x32,1024
         self.layer4 = resnet.layer4  # res-5 o/p = 16x16,2048
-        self.layer5 = resnet._make_layer(Bottleneck, 1024, 3, stride=2)  # res-5 o/p = 16x16,4096
+        # self.layer5 = resnet._make_layer(Bottleneck, 1024, 3, stride=2)  # res-5 o/p = 16x16,4096
 
         self.gcn1 = GCN_8(256, self.num_classes * 4)  # gcn_i after layer-1
         self.gcn2 = GCN_8(512, self.num_classes * 4)
         self.gcn3 = GCN_8(1024, self.num_classes * 4)
         self.gcn4 = GCN_8(2048, self.num_classes * 4)
-        self.gcn5 = GCN_8(4096, self.num_classes * 4)
+        # self.gcn5 = GCN_8(4096, self.num_classes * 4)
 
         self.gcn1_1 = R2(out_c=self.num_classes * 4, group=4)  # gcn_i after layer-1
         self.gcn1_2 = R2(out_c=self.num_classes * 4, group=4)  # gcn_i after layer-1
@@ -351,7 +352,7 @@ class FCN_GCN(nn.Module):
         self.gcn3_2 = R2(out_c=self.num_classes * 4, group=4)  # gcn_i after layer-1
         self.gcn3_3 = R2(out_c=self.num_classes * 4, group=4)  # gcn_i after layer-1
         self.gcn4_1 = R2(out_c=self.num_classes * 4, group=4)  # gcn_i after layer-1
-        self.gcn5_1 = R2(out_c=self.num_classes * 4, group=4)  # gcn_i after layer-1
+        # self.gcn5_1 = R2(out_c=self.num_classes * 4, group=4)  # gcn_i after layer-1
 
         self.DU_01 = DU(20, 20)
         self.DU_02 = DU(20, 20)
@@ -362,7 +363,7 @@ class FCN_GCN(nn.Module):
         self.DU_07 = DU(20, 20)
         self.DU_08 = DU(20, 20)
         self.DU_09 = DU(20, 20)
-        self.DU_10 = DU(20, 20)
+        # self.DU_10 = DU(20, 20)
         
         self.bottleneck_01 = BottleneckX(40, 20)
         self.bottleneck_02 = BottleneckX(60, 20)
@@ -373,7 +374,7 @@ class FCN_GCN(nn.Module):
         self.bottleneck_07 = BottleneckX(80, 20)
         self.bottleneck_08 = BottleneckX(40, 20)
         self.bottleneck_09 = BottleneckX(60, 20)
-        self.bottleneck_10 = BottleneckX(40, 20)
+        # self.bottleneck_10 = BottleneckX(40, 20)
 
 
         self.conv_1x1_1 = nn.Conv2d(20, 20, 1)
@@ -394,6 +395,7 @@ class FCN_GCN(nn.Module):
     def forward(self, x, debug=False, viz=None, patient=None, slice_index=None):
         # input = x  # 256
         x = self.conv0(x)
+
         x = self.bn0(x)
         x = self.relu(x)
         fm0 = x  # 256
@@ -401,19 +403,20 @@ class FCN_GCN(nn.Module):
         fm2 = self.layer2(fm1)  # 128
         fm3 = self.layer3(fm2)  # 64
         fm4 = self.layer4(fm3)  # 32
-        fm5 = self.layer5(fm4)  # 32
+        # fm5 = self.layer5(fm4)  # 32
         
         # R2
         gc_fm1 = self.gcn1_1(self.gcn1(fm1))
         gc_fm2 = self.gcn2_1(self.gcn2(fm2))
         gc_fm3 = self.gcn3_1(self.gcn3(fm3))
         gc_fm4 = self.gcn4_1(self.gcn4(fm4))
-        gc_fm5 = self.gcn5_1(self.gcn5(fm5))
+        # gc_fm5 = self.gcn5_1(self.gcn5(fm5))
         
         # DU ok
-        gc_fm4_L = self.DU_10(gc_fm5)
-        gc_fm4_L = torch.cat((gc_fm4, gc_fm4_L), 1)
-        gc_fm4_L = self.bottleneck_10(gc_fm4_L)
+        # gc_fm4_L = self.DU_10(gc_fm5)
+        # gc_fm4_L = torch.cat((gc_fm4, gc_fm4_L), 1)
+        # gc_fm4_L = self.bottleneck_10(gc_fm4_L)
+        gc_fm4_L = gc_fm4
         # ok
         x = self.DU_08(gc_fm4)
         x = torch.cat((gc_fm3, x), 1)
@@ -457,6 +460,11 @@ class FCN_GCN(nn.Module):
         x = torch.cat((gc_fm1, gc_fm1_1, gc_fm1_2, gc_fm1_3, x), 1)
         gc_fm1_L = self.bottleneck_04(x)
 
+        # gc_fm1_1 = F.interpolate(gc_fm1_1, scale_factor=2, mode='bilinear', align_corners=True)
+        # gc_fm1_2 = F.interpolate(gc_fm1_2, scale_factor=2, mode='bilinear', align_corners=True)
+        # gc_fm1_3 = F.interpolate(gc_fm1_3, scale_factor=2, mode='bilinear', align_corners=True)
+        # gc_fm1_L = F.interpolate(gc_fm1_L, scale_factor=2, mode='bilinear', align_corners=True)
+
         x = self.conv_1x1_1(gc_fm1_1)
         s1, s2, s3, s4 = torch.chunk(x, 4, 1)
         score_1 = s1 + s2 + s3 + s4
@@ -472,9 +480,14 @@ class FCN_GCN(nn.Module):
         x = self.conv_1x1_4(gc_fm1_L)
         s1, s2, s3, s4 = torch.chunk(x, 4, 1)
         score_4 = s1 + s2 + s3 + s4
-
+        # print(score_4.size())
         out = score_1 + score_2 + score_3 + score_4
-
+        if debug is True:
+            self.heatmap(score_1, viz, patient, slice_index, 'score_1')
+            self.heatmap(score_2, viz, patient, slice_index, 'score_2')
+            self.heatmap(score_3, viz, patient, slice_index, 'score_3')
+            self.heatmap(score_4, viz, patient, slice_index, 'score_4')
+            self.heatmap(out, viz, patient, slice_index, 'out')
         return out
 
     def heatmap(self, input, viz, patient, slice_index, name):
