@@ -236,7 +236,8 @@ class R2(nn.Module):
 
         self.conv_3x3_1 = nn.Conv2d(p, p, kernel_size=3, padding=1)
         self.conv_3x3_2 = nn.Conv2d(p, p, kernel_size=3, padding=1)
-        self.conv_3x3_3 = nn.Conv2d(p, p, kernel_size=3, padding=1)
+        # self.conv_3x3_3 = nn.Conv2d(p, p, kernel_size=3, padding=1)
+        self.conv_5x5_3 = nn.Conv2d(p, p, kernel_size=5, padding=2)
         # door
         # self.conv_1x1_s = [nn.Conv2d(p, p, 1) for i in range(group - 1)]
         self.conv_1x1_2 = nn.Conv2d(p, p, kernel_size=1)
@@ -263,7 +264,8 @@ class R2(nn.Module):
         c = self.conv_3x3_2(c)
         idx = 3
         d = self.conv_1x1_4(c)
-        d = self.conv_3x3_3(d)
+        # d = self.conv_3x3_3(d)
+        d = self.conv_5x5_3(d)
         # for idx, chunk in enumerate(chunks):
         #     if idx == 0:
         #         chunks[idx] = self.conv_1x1_s[idx](chunks[idx])

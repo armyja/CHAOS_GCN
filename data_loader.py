@@ -102,47 +102,61 @@ class OrganSeg(Dataset):
         # image1 -= self.low_range
         # image1 /= (self.high_range - self.low_range)
 
-
-
         if '.png' in self.label_filename[self.index1]:
             label1 = png2npy(self.label_filename[self.index1])
         elif '.npy' in self.label_filename[self.index1]:
             label1 = npy2npy(self.label_filename[self.index1], mask=True)
+
         width = label1.shape[0]
         height = label1.shape[1]
 
-
         lbl = label1.reshape(1, width, height)
-        img = image1
-        # set rotate
-        rotate_time = random.randint(0, 3)
-        lbl =  np.rot90(lbl, rotate_time)
-        img = np.rot90(img, rotate_time)
-        # set flip
-        flip_time = random.randint(0, 1)
-        if flip_time == 1:
-            lbl = lbl.T
-            img = img.T
-
-        mix_rate = random.randint(0, 5)
-        if mix_rate >= 4:
-            length = len(self.active_index)
-            self.random_index = (self.index1 + random.randint(0, length -1)) % length
-            if '.dcm' in self.image_filename[self.random_index]:
-                image1 = dcm2npy(self.image_filename[self.random_index]).astype(np.float32)
-            elif '.npy' in self.image_filename[self.random_index]:
-                image1 = npy2npy(self.image_filename[self.random_index]).astype(np.float32)
-            np.minimum(np.maximum(image1, self.low_range, image1), self.high_range, image1)
-            img = img *0.6 + image1 * 0.4
-
-        img = np.repeat(image1.reshape(1, width, height), 3, axis=0)
-
-        if self.augmentations is not None:
-            img, lbl = self.augmentations(img, lbl)
+        img = image1.reshape(1, width, height)
 
         if self.transforms is not None:
             img, lbl = self.transform(img, lbl)
 
+
+        width, height = 256, 256
+        lbl = lbl.reshape(width, height)
+        img = img.reshape(width, height)
+        # set rotate
+        # rotate_time = random.randint(0, 3)
+        # lbl = np.rot90(lbl, rotate_time)
+        # img = np.rot90(img, rotate_time)
+        # set flip
+        # flip_time = random.randint(0, 1)
+        # if flip_time == 1:
+        #     lbl = lbl.T
+        #     img = img.T
+
+        # mix_rate = random.randint(0, 5)
+        # if mix_rate >= 8:
+        #     length = len(self.active_index)
+        #     self.random_index = (self.index1 + random.randint(0, length - 1)) % length
+        #     if '.dcm' in self.image_filename[self.random_index]:
+        #         image1 = dcm2npy(self.image_filename[self.random_index]).astype(np.float32)
+        #     elif '.npy' in self.image_filename[self.random_index]:
+        #         image1 = npy2npy(self.image_filename[self.random_index]).astype(np.float32)
+        #     np.minimum(np.maximum(image1, self.low_range, image1), self.high_range, image1)
+        #
+        #     width = image1.shape[0]
+        #     height = image1.shape[1]
+        #     image1 = image1.reshape(1, width, height)
+        #     image1, image1 = self.transform(image1, image1)
+        #
+        #     width, height = 256, 256
+        #     image1 = image1.reshape(width, height)
+        #     img = img * 0.6 + image1 * 0.4
+
+        img = np.repeat(img.reshape(1, width, height), 3, axis=0)
+        lbl = lbl.reshape(1, width, height)
+
+        if self.augmentations is not None:
+            img, lbl = self.augmentations(img, lbl)
+
+        img = np.ascontiguousarray(img, dtype=np.float32)
+        lbl = np.ascontiguousarray(lbl, dtype=np.int64)
         return img, lbl
 
     def transform(self, img, lbl):

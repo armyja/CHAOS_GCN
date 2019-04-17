@@ -1,5 +1,5 @@
-mkdir ~/MyFiles/.torch
-mkdir ~/MyFiles/.torch/models
+mkdir /home/ubuntu/.torch
+mkdir /home/ubuntu/.torch/models
 cp ~/MyFiles/models/resnet50-19c8e357.pth /home/ubuntu/.torch/models/resnet50-19c8e357.pth
 
 
