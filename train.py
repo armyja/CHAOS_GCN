@@ -125,7 +125,7 @@ def main():
     # output_dim = N x C x H x W
     # C = num_classes
 
-    model = build_model.FCN_GCN(num_classes=args.organ_number + 1)
+    model = build_model.FCN_GCN_GCN_C(num_classes=args.organ_number + 1)
 
     #######################
     #  USE GPU FOR MODEL  #
@@ -145,7 +145,7 @@ def main():
         'multi_scale_cross_entropy2d': loss.multi_scale_cross_entropy2d,
     }
     criterion = loss_dict[args.loss_type]
-    criterion_weights = torch.FloatTensor([1.0, 4.0, 8.0, 8.0, 8.0]).to(device)
+    criterion_weights = torch.FloatTensor([1.0, 4.0, 8.0, 8.0, 4.0]).to(device)
     print('criterion_weights', criterion_weights)
 
     # Todo Step 6: Instantiate Optimizer Class

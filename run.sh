@@ -3,7 +3,7 @@ TRAINING_ROOT='/home/ubuntu/MyFiles/GCN'
 RESUME=${TRAINING_ROOT}/snapshots/main_GCN_All_All_20190407_090219_17000.pkl
 RESUME='0'
 CURRENT_FOLD=0
-TRAINING_TIMESTAMP=$(date +'%Y%m%d_%H%M%S')
+TRAINING_TIMESTAMP=$(date +'%Y%m%d_%H%M%S')FCN_GCN_GCN_C
 python train.py \
 --resume ${RESUME} \
 --current_fold ${CURRENT_FOLD} \
