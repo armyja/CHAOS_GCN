@@ -16,6 +16,9 @@ google-net boundary refine
 
 ## TODO
 
+Training set merge to one.(from training.txt)
+Testing set generate one.(folders)
+
 data agumentation
 change 3 layer to 4 layer
 
