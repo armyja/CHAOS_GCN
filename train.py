@@ -125,7 +125,7 @@ def main():
     # output_dim = N x C x H x W
     # C = num_classes
 
-    model = build_model.FCN_GCN_GCN_C(num_classes=args.organ_number + 1)
+    model = build_model.FCN_GCN_GCN_NO_SE(num_classes=args.organ_number + 1)
 
     #######################
     #  USE GPU FOR MODEL  #

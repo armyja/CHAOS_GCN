@@ -122,14 +122,16 @@ def main():
         # '/home/ubuntu/MyFiles/GCN/snapshots/main_GCN_All_20190403_113937_2001.pkl',  # 8786 _5.5
         # '/home/ubuntu/MyFiles/GCN/snapshots/main_GCN_All_20190403_124518_20001.pkl',  # 8786 _5.5
         # '/home/ubuntu/MyFiles/GCN/snapshots/main_GCN_All_All_20190407_090219_17000.pkl',  # 8786 _5.5
-        '/home/ubuntu/MyFiles/GCN/snapshots/main_GCN_All_20190403_103014_12001.pkl',  # 8786 _5.5
+        # '/home/ubuntu/MyFiles/GCN/snapshots/main_GCN_All_20190403_103014_12001.pkl',  # 8786 _5.5
+        # '/home/ubuntu/MyFiles/GCN/snapshots/main_GCN_All_20190421_011307_16000.pkl',  # 8786 _5.5
+        '/home/ubuntu/MyFiles/GCN/snapshots/main_GCN_All_20190425_084420FCN_GCN_GCN_NO_SE_16000.pkl',  # 8786 _5.5
         # '/home/ubuntu/MyFiles/GCN/snapshots/main_GCN_All_20190331_054658_35001.pkl'
     ]
     # snapshot_file =
     for snapshot_file in snapshot_files:
         file_name = snapshot_file.split('/')[-1]
 
-        net = build_model.FCN_GCN_GCN(num_classes=args.organ_number + 1)
+        net = build_model.FCN_GCN_GCN_NO_SE(num_classes=args.organ_number + 1)
         net.to(device)
         if 'All' in snapshot_file:
             checkpoint = torch.load(snapshot_file)
