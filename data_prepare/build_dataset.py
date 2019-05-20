@@ -80,6 +80,12 @@ def get_masks(gt_images, vol_img, scale, mask_name):
     if mask_name == 'liver':
         gt_images = gt_images[::-1]
     # gt_arr.shape = (35, 256, 256)
+
+    if len(gt_images) > 0:
+        pass
+    else:
+        return all_masks
+
     gt_arr = np.stack([np.asarray(PIL.Image.open(_)) for _ in gt_images])
     unique_values_mask = np.unique(gt_arr)
     # 8 bit
