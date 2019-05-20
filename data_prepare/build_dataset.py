@@ -91,7 +91,7 @@ def get_masks(gt_images, vol_img, scale, mask_name):
             gt_mask[gt_arr == unique_value] = class_mapping_2(unique_value)
 
     gt_mask_array = gt_mask
-    gt_mask_array = ndimage.zoom(gt_mask_array, (scale, 1, 1), order=0)
+    # gt_mask_array = ndimage.zoom(gt_mask_array, (scale, 1, 1), order=0)
 
     gt_sitk_mask = sitk.GetImageFromArray(gt_mask_array)
     gt_sitk_mask.SetOrigin(vol_img.GetOrigin())
@@ -138,7 +138,7 @@ def get_mri_images_from_patient(patient_path):
                 vol_img = sitk.Paste(vol_img, slice_vol, slice_vol.GetSize(), destinationIndex=[0, 0, idx_z])
 
             vol_img_array = sitk.GetArrayFromImage(vol_img)
-            vol_img_array = ndimage.zoom(vol_img_array, (slices[0].GetSpacing()[-1] / 2.0, 1, 1), order=3)
+            # vol_img_array = ndimage.zoom(vol_img_array, (slices[0].GetSpacing()[-1] / 2.0, 1, 1), order=3)
             # seg_array = ndimage.zoom(seg_array, (ct.GetSpacing()[-1] / slice_thickness, 1, 1), order=0)
             vol_img = sitk.GetImageFromArray(vol_img_array)
             vol_img.SetSpacing((slices[0].GetSpacing()[0], slices[0].GetSpacing()[1], 2.0))
@@ -175,6 +175,7 @@ def get_ct_images_from_patient(patient_path):
 def main_mri(args):
     patients = get_patients(args.root_dir)
     for patient in tqdm(patients):
+        print(patient)
         images, two_masks = get_mri_images_from_patient(os.path.join(args.root_dir, patient))
         images.sort(key=lambda x: x[1])  # Sort on echo time, longer echo time is the in-phase image
 
