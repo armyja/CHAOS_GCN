@@ -26,12 +26,16 @@ def in_training_set(total_samples, i, folds, current_fold):
     end_index = fold_size * (current_fold + 1) + max(0, current_fold + 1 - fold_remainder)
     return not (start_index <= i < end_index)
 
+
 testing_set = [4, 6, 7, 9, 11, 12, 14, 16, 17, 18, 23, 24, 25, 26, 27, 28, 29, 30, 35, 40]
+
+
 def is_training_set(image_path):
+    str = image_path
     regex = r'.+MR/(\d+)/'
-    if re.search(regex, str) == None:
+    if re.search(regex, str) is None:
         return False
-    
+
     idx = int(re.search(regex, str).group(1))
     if not idx in testing_set:
         return True
@@ -70,9 +74,10 @@ def dcm2npy(dcm):
     data[:, :, :] = array
     return data
 
+
 def npy2npy(image, mask=False):
     array = np.load(image)
-    array = array.reshape(array.shape[0],array.shape[1], 1)
+    array = array.reshape(array.shape[0], array.shape[1], 1)
     data = np.zeros(array.shape, dtype=np.int16)
     data[:, :, :] = array
     if mask is True:
