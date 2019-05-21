@@ -1,6 +1,6 @@
 import PIL.Image
 import os
-
+import re
 import SimpleITK as sitk
 import numpy as np
 
@@ -25,6 +25,17 @@ def in_training_set(total_samples, i, folds, current_fold):
     start_index = fold_size * current_fold + max(0, current_fold - fold_remainder)
     end_index = fold_size * (current_fold + 1) + max(0, current_fold + 1 - fold_remainder)
     return not (start_index <= i < end_index)
+
+testing_set = [4, 6, 7, 9, 11, 12, 14, 16, 17, 18, 23, 24, 25, 26, 27, 28, 29, 30, 35, 40]
+def is_training_set(image_path):
+    regex = r'.+MR/(\d+)/'
+    if re.search(regex, str) == None:
+        return False
+    
+    idx = int(re.search(regex, str).group(1))
+    if not idx in testing_set:
+        return True
+    return False
 
 
 ####################################################################################################

@@ -162,16 +162,20 @@ def training_list(args):
         list_training_ = training_set_filename(list_path, f)
         output = open(list_training_, 'w')
         for i in range(total_samples):
-            if in_training_set(total_samples, i, folds, f):
+            if is_training_set(image_directory[i]):
                 output.write(str(i) + ' ' + image_directory[i] + ' ' + label_directory[i] + '\n')
+            # if in_training_set(total_samples, i, folds, f):
+                # output.write(str(i) + ' ' + image_directory[i] + ' ' + label_directory[i] + '\n')
         output.close()
     print('Writing testing image list.')
     for f in range(folds):
         list_testing_ = testing_set_filename(list_path, f)
         output = open(list_testing_, 'w')
         for i in range(total_samples):
-            if not in_training_set(total_samples, i, folds, f):
+            if not is_training_set(image_directory[i]):
                 output.write(str(i) + ' ' + image_directory[i] + ' ' + label_directory[i] + '\n')
+            # if not in_training_set(total_samples, i, folds, f):
+                # output.write(str(i) + ' ' + image_directory[i] + ' ' + label_directory[i] + '\n')
         output.close()
     print('Initialization is done.')
     exit(0)
