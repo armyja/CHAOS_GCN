@@ -125,7 +125,7 @@ def main():
     # output_dim = N x C x H x W
     # C = num_classes
 
-    model = build_model.FCN_GCN_GCN_NO_SE(num_classes=args.organ_number + 1)
+    model = build_model.FCN_GCN(num_classes=args.organ_number + 1)
 
     #######################
     #  USE GPU FOR MODEL  #
@@ -275,7 +275,7 @@ def main():
             #     # Print Loss
             #     print('Iteration: {}. Avg_Loss: {}'.format(iter, avg))
             #     viz.text('Iteration: {}. Avg_Loss: {}'.format(iter, avg))
-            if iter % 1000 == 0:
+            if iter % 1000 == 0 and iter > 10000:
                 snapshot_path = snapshot_path_from_root(args.root_dir)
                 snapshot_name = f'main_GCN_All_{args.timestamp}_{iter}.pkl'
                 os.makedirs(snapshot_path, exist_ok=True)
@@ -284,8 +284,8 @@ def main():
                          }
                 torch.save(state, os.path.join(snapshot_path, snapshot_name))
 
-                DSC = test_volume(net=model, test_loader=test_loader, test_dataset=test_dataset,
-                                  snapshot_file_name=snapshot_name, args=args)
+                # DSC = test_volume(net=model, test_loader=test_loader, test_dataset=test_dataset,
+                #                   snapshot_file_name=snapshot_name, args=args)
 
                 # means = np.zeros(DSC.shape[1])
                 # for i in range(DSC.shape[1]):

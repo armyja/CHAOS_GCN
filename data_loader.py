@@ -287,6 +287,10 @@ class OrganVolTest(Dataset):
 
         colors = [  #
             [0, 0, 0],
+            [63, 63, 63],
+            [126, 126, 126],
+            [189, 189, 189],
+            [252, 252, 252],
             [128, 64, 128],
             # [70, 70, 70],
             [102, 102, 156],
@@ -325,7 +329,10 @@ class OrganVolTest(Dataset):
         # tmp = dcm2npy(self.image_filename[self.active_index[0]]).astype(np.float32)
         width = tmp.shape[0]
         height = tmp.shape[1]
-        img_vol = np.zeros((len(self.active_index), 3, height, width), dtype=np.float32)
+        print(width, height)
+        W = 384
+        H = 384
+        img_vol = np.zeros((len(self.active_index), 3, H, W), dtype=np.float32)
         lbl_vol = np.zeros((len(self.active_index), height, width), dtype=np.int64)
         for idx, id in enumerate(self.active_index):
 
@@ -343,7 +350,15 @@ class OrganVolTest(Dataset):
 
             # label1 = png2npy(self.label_filename[id])
             img = np.repeat(image1.reshape(1, width, height), 3, axis=0)
-            lbl = label1.reshape(1, width, height)
+            # lbl = label1.reshape(1, width, height)
+            lbl = img[0]
+            W = 384
+            H = 384
+
+            if height > H and width > W:
+                X = int((height - H) / 2)
+                Y = int((width - W) / 2)
+                img = img[:, X:X + H, Y:Y + W]
             img_vol[idx, :] = img
             lbl_vol[idx, :] = lbl
 
@@ -354,7 +369,7 @@ class OrganVolTest(Dataset):
             img = self.transforms(img)
             lbl = self.transforms(lbl)
 
-        return img_vol, lbl_vol
+        return img_vol, lbl_vol, self.index1, width
 
     def __len__(self):
         return len(self.testing_image_set)
